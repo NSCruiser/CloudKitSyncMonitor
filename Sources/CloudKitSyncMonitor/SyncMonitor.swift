@@ -171,9 +171,9 @@ public class SyncMonitor: ObservableObject {
             case .notStarted:
                 return "bolt.horizontal.icloud"
             case .inProgress:
-                return "arrow.clockwise.icloud"
+                return "arrow.triangle.2.circlepath.icloud"
             case .succeeded:
-                return "icloud"
+                return "checkmark.icloud.fill"
             case .unknown:
                 return "icloud.slash"
             }
@@ -508,33 +508,35 @@ public class SyncMonitor: ObservableObject {
 
     /// Set the appropriate State property (importState, exportState, setupState) based on the provided event
     internal func setProperties(from event: SyncEvent) {
-        // First, set the SyncState for the event
-        var state: SyncState = .notStarted
-        // NSPersistentCloudKitContainer sends a notification when an event starts, and another when it
-        // ends. If it has an endDate, it means the event finished.
-        if let startDate = event.startDate, event.endDate == nil {
-            state = .inProgress(started: startDate)
-        } else if let startDate = event.startDate, let endDate = event.endDate {
-            if event.succeeded {
-                state = .succeeded(started: startDate, ended: endDate)
-            } else {
-                state = .failed(started: startDate, ended: endDate, error: event.error)
+        withAnimation(Animation.easeInOut(duration: 0.5)) {
+            // First, set the SyncState for the event
+            var state: SyncState = .notStarted
+            // NSPersistentCloudKitContainer sends a notification when an event starts, and another when it
+            // ends. If it has an endDate, it means the event finished.
+            if let startDate = event.startDate, event.endDate == nil {
+                state = .inProgress(started: startDate)
+            } else if let startDate = event.startDate, let endDate = event.endDate {
+                if event.succeeded {
+                    state = .succeeded(started: startDate, ended: endDate)
+                } else {
+                    state = .failed(started: startDate, ended: endDate, error: event.error)
+                }
             }
-        }
 
-        switch event.type {
-        case .setup:
-            setupState = state
-        case .import:
-            importState = state
-        case .export:
-            exportState = state
-        @unknown default:
-            assertionFailure("NSPersistentCloudKitContainer added a new event type.")
-        }
+            switch event.type {
+            case .setup:
+                setupState = state
+            case .import:
+                importState = state
+            case .export:
+                exportState = state
+            @unknown default:
+                assertionFailure("NSPersistentCloudKitContainer added a new event type.")
+            }
 
-        if event.error != nil {
-            lastError = event.error
+            if event.error != nil {
+                lastError = event.error
+            }
         }
     }
 
